@@ -179,4 +179,7 @@ REST_FRAMEWORK = {
 # =========================================================
 # DEFAULT AUTO FIELD
 # =========================================================
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.railway.app"
+]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
