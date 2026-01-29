@@ -24,6 +24,7 @@ ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
     "localhost,127.0.0.1,.railway.app"
 ).split(",")
+ALLOWED_HOSTS = ['*']
 
 # =========================================================
 # APPLICATIONS
@@ -46,13 +47,10 @@ INSTALLED_APPS = [
 
 # =========================================================
 # MIDDLEWARE
-# =========================================================
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-
-    'corsheaders.middleware.CorsMiddleware',
-
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -60,6 +58,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 # =========================================================
 # URLS & WSGI
@@ -96,7 +96,7 @@ DATABASES = {
             'DB_ENGINE',
             'django.db.backends.mysql'
         ),
-        'NAME': os.getenv('DB_NAME', 'railway'),
+        'NAME': os.getenv('DB_NAME', 'project_cits'),
         'USER': os.getenv('DB_USER', 'root'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         'HOST': os.getenv('DB_HOST', 'localhost'),
@@ -183,3 +183,5 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.railway.app"
 ]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEBUG = False
+
