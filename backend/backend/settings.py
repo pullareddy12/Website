@@ -1,6 +1,7 @@
 """
 Django settings for backend project
-Production ready for Render (Backend) + Vercel (Frontend)
+SQLite setup (Local + Render)
+Production-ready for Render (Backend) + Vercel (Frontend)
 """
 
 from pathlib import Path
@@ -11,16 +12,18 @@ from dotenv import load_dotenv
 # BASE DIR & ENV
 # -------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Loads backend/.env if present (works locally). On Render env vars will be used.
 load_dotenv(BASE_DIR / ".env")
 
 # -------------------------------------------------
 # SECURITY
 # -------------------------------------------------
-SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key-change-me")
 
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "*").split(",") if h.strip()]
 
 # -------------------------------------------------
 # APPLICATIONS
@@ -37,7 +40,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
 
-    # Local
+    # Local apps
     "api",
 ]
 
@@ -45,25 +48,17 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 # -------------------------------------------------
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+
+    "corsheaders.middleware.CorsMiddleware",
+
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
-
-# -------------------------------------------------
-# CORS & CSRF
-# -------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = True
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.onrender.com",
-    "https://*.vercel.app",
 ]
 
 # -------------------------------------------------
@@ -78,7 +73,7 @@ WSGI_APPLICATION = "backend.wsgi.application"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [BASE_DIR / "templates"],  # optional
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -92,15 +87,14 @@ TEMPLATES = [
 ]
 
 # -------------------------------------------------
-# DATABASE (MySQL)
+# DATABASE (SQLite)
 # -------------------------------------------------
-if os.getenv("RENDER") == "true":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
+}
 
 # -------------------------------------------------
 # PASSWORD VALIDATION
@@ -121,11 +115,12 @@ USE_I18N = True
 USE_TZ = True
 
 # -------------------------------------------------
-# STATIC FILES
+# STATIC FILES (Render needs collectstatic + whitenoise)
 # -------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Optional but recommended with Whitenoise
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # -------------------------------------------------
@@ -135,14 +130,35 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # -------------------------------------------------
-# EMAIL (Gmail SMTP)
+# CORS & CSRF (for Vercel frontend)
+# -------------------------------------------------
+# Safer than allow-all; set your Vercel URL in env
+# Example: FRONTEND_URL=https://your-app.vercel.app
+FRONTEND_URL = os.getenv("FRONTEND_URL", "").strip()
+
+CORS_ALLOWED_ORIGINS = []
+if FRONTEND_URL:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+
+# If you still want open access during testing, set CORS_ALLOW_ALL_ORIGINS=True in env
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.onrender.com",
+    "https://*.vercel.app",
+]
+if FRONTEND_URL:
+    CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
+
+# -------------------------------------------------
+# EMAIL (Optional: only if you really send emails)
 # -------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # -------------------------------------------------
